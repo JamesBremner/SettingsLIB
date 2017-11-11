@@ -40,10 +40,10 @@ public:
     virtual void saveAll( void ) = 0;
 
     //! Any Database based data store may use this to update values in db. File data stores should ignore this.
-    virtual void    updateBool( const char* groupName, const char* paramName, bool val ) = 0;
-    virtual void    updateInt( const char* groupName, const char* paramName, int val ) = 0;
-    virtual void    updateFloat( const char* groupName, const char* paramName, float val ) = 0;
-    virtual void    updateString( const char* groupName, const char* paramName, const char* val ) = 0;
+    virtual void updateBool( const char* groupName, const char* paramName, bool val ) = 0;
+    virtual void updateInt( const char* groupName, const char* paramName, int val ) = 0;
+    virtual void updateFloat( const char* groupName, const char* paramName, float val ) = 0;
+    virtual void updateString( const char* groupName, const char* paramName, const char* val ) = 0;
 };
 
 #endif /* ndef __ISETTINGSSTORAGE_H__ */

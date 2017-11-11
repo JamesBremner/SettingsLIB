@@ -17,6 +17,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\include\iservice.h" />
     <ClInclude Include="..\..\include\isettingsservice.h" />
+    <ClInclude Include="..\..\include\isettingsstorage.h" />
     <ClInclude Include="..\..\src\settingslib\settingscontainer.h" />
     <ClInclude Include="..\..\src\settingslib\settingsservice.h" />
     <ClInclude Include="..\..\src\settingslib\settingsvar.h" />

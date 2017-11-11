@@ -15,6 +15,7 @@
 #define __SETTINGSSERVICE_H__
 
 #include "isettingsservice.h"
+#include "isettingsstorage.h"
 #include "settingscontainer.h"
 
 // ---------------------------------------------------------------------------
@@ -23,9 +24,9 @@
 class SettingsService : public ISettingsService {
 public:
     static const unsigned int   INTERFACE_VERSION = ISettingsService::INTERFACE_VERSION;      //!< Interface version implemented by this compilation
-    static ISettingsService::Ref createInstance( void );
+    static ISettingsService::Ref createInstance( ISettingsStorage* settingsStorage );
 
-    SettingsService() = default;
+    SettingsService( ISettingsStorage* settingsStorage ) : storage( settingsStorage ) {}
     virtual ~SettingsService() = default;
 
     virtual const char* getName( void ) const { return "settings"; }
@@ -59,6 +60,8 @@ private:
     std::string     valToString( float val );       //!< Convert float to dtring
 
     SettingsContainer   container;
+    ISettingsStorage*   storage;
+
     static const char* LOG_TAG;
 };
 

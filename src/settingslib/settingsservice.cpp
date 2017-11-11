@@ -36,8 +36,8 @@ void SettingsService::dbgDump( void ) const {
 // ---------------------------------------------------------------------------
 // createInstance
 // ---------------------------------------------------------------------------
-ISettingsService::Ref SettingsService::createInstance( void ) {
-    ISettingsService::Ref ref = std::make_unique<SettingsService>();
+ISettingsService::Ref SettingsService::createInstance( ISettingsStorage* settingsStorage ) {
+    ISettingsService::Ref ref = std::make_unique<SettingsService>( settingsStorage );
     return ref;
 }
 

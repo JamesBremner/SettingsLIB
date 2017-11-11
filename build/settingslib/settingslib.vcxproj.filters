@@ -38,5 +38,8 @@
     <ClInclude Include="..\..\src\settingslib\settingscontainer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\isettingsstorage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
