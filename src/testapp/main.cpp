@@ -60,14 +60,14 @@ void strTest( ISettingsService* settings ) {
 
 class NullSettingsStorage : public ISettingsStorage {
 public:
-    virtual void open( ISettingsService* settings ) { cout << "NullSettingsStorage::close" << endl; }
+    virtual void open( ISettingsService* settings ) { cout << "NullSettingsStorage::open" << endl; }
     virtual void close( void ) { cout << "NullSettingsStorage::close" << endl; }
-    virtual void loadAll( void ) { cout << "NullSettingsStorage::close" << endl; }
-    virtual void saveAll( void ) { cout << "NullSettingsStorage::close" << endl; }
-    virtual void updateBool( const char* groupName, const char* paramName, bool val ) { cout << "NullSettingsStorage::close" << endl; }
-    virtual void updateInt( const char* groupName, const char* paramName, int val ) { cout << "NullSettingsStorage::close" << endl; }
-    virtual void updateFloat( const char* groupName, const char* paramName, float val ) { cout << "NullSettingsStorage::close" << endl; }
-    virtual void updateString( const char* groupName, const char* paramName, const char* val ) { cout << "NullSettingsStorage::close" << endl; }
+    virtual void loadAll( void ) { cout << "NullSettingsStorage::loadAll" << endl; }
+    virtual void saveAll( void ) { cout << "NullSettingsStorage::saveAll" << endl; }
+    virtual void updateBool( const char* groupName, const char* paramName, bool val ) { cout << "NullSettingsStorage::updateBool( " << groupName << ", " << paramName << ", " << val << ")" << endl; }
+    virtual void updateInt( const char* groupName, const char* paramName, int val ) { cout << "NullSettingsStorage::updateInt( " << groupName << ", " << paramName << ", " << val << ")" << endl; }
+    virtual void updateFloat( const char* groupName, const char* paramName, float val ) { cout << "NullSettingsStorage::updateFloat( " << groupName << ", " << paramName << ", " << val << ")" << endl; }
+    virtual void updateString( const char* groupName, const char* paramName, const char* val ) { cout << "NullSettingsStorage::updateString( " << groupName << ", " << paramName << ", " << val << ")" << endl; }
 };
 
 int main() {

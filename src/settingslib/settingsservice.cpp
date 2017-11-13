@@ -43,14 +43,22 @@ ISettingsService::Ref SettingsService::createInstance( ISettingsStorage* setting
 
 // ---------------------------------------------------------------------------
 // onInit
+//
+//! Using ISettingsStorage loads all settings into service
 // ---------------------------------------------------------------------------
 void SettingsService::onInit( void ) {
+    storage->open( this );
+    storage->loadAll();
 }
 
 // ---------------------------------------------------------------------------
 // onShutdown
+//
+//! Saves all settings using ISettingsStorage interface and closes connection with db/file
 // ---------------------------------------------------------------------------
 void SettingsService::onShutdown( void ) {
+    storage->saveAll();
+    storage->close();
 }
 
 // ---------------------------------------------------------------------------
@@ -122,6 +130,7 @@ void SettingsService::setBool( const char* groupName, const char* paramName, boo
 
     var->boolVal = val;
     var->stringVal = valToString( val );
+    storage->updateBool( groupName, paramName, val );
 }
 
 // ---------------------------------------------------------------------------
@@ -137,6 +146,7 @@ void SettingsService::setInt( const char* groupName, const char* paramName, int 
 
     var->intVal = val;
     var->stringVal = valToString( val );
+    storage->updateInt( groupName, paramName, val );
 }
 
 // ---------------------------------------------------------------------------
@@ -152,6 +162,7 @@ void SettingsService::setFloat( const char* groupName, const char* paramName, fl
 
     var->floatVal = val;
     var->stringVal = valToString( val );
+    storage->updateFloat( groupName, paramName, val );
 }
 
 // ---------------------------------------------------------------------------
@@ -167,6 +178,7 @@ void SettingsService::setString( const char* groupName, const char* paramName, c
 
     var->intVal = 0;
     var->stringVal = std::string( val );
+    storage->updateString( groupName, paramName, val );
 }
 
 // ---------------------------------------------------------------------------

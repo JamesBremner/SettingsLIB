@@ -23,17 +23,18 @@ class ISettingsStorage {
 public:
     virtual ~ISettingsStorage() = default;
 
-    //! Open connection to datasource. It may be file or database, subclass in constructor
-    //! should accept required information like db name or file path.
-    //! If data store does not exist, open should create it.
-    //! When open fails, should throw subclass of std::runtime_error
+    //! Open connection to datasource. It may be file or database.
+    //! Subclass constructor should accept required information like db name or file path.
+    //! If data store does not exist, open mast create it.
+    //! When open fails, it must throw subclass of std::runtime_error
     //! @todo define exception for ISettingsStorage::open
     virtual void open( ISettingsService* settings ) = 0;
 
-    //! Close connection to already opened data source. If open failed, this method should not fail, just igonre the call
+    //! Close connection to already opened data source.
+    //! If open failed, this method should not fail, just igonre the call
     virtual void close( void ) = 0;
 
-    //! Read all settings already stored in datastore
+    //! Read all settings already stored in datastore, and push them to ISettingsService
     virtual void loadAll( void ) = 0;
 
     //! File based datastore should use this to recreate settings file
