@@ -87,8 +87,8 @@ void ISettingsStorage::Write( const char* groupName, const char* paramName, eTyp
     query << (int) type << ", ";
     query << bool_val << ", ";
     query << int_val << ", ";
-    query << float_val << ", ";
-    query << string_val << " );";
+    query << float_val << ", '";
+    query << string_val << "' );";
 
     //std::cout << query.str() << std::endl;
 
