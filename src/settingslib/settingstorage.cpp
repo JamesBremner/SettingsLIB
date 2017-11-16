@@ -8,14 +8,14 @@
 #include "sqlite3.h"
 
 ISettingsStorage::ISettingsStorage( const std::string& dbfname )
-    : db( 0 )
+    : myDB( 0 )
     , mydbfname( dbfname )
 {
 
 }
 void ISettingsStorage::open( ISettingsService* settings )
 {
-    if( db )
+    if( myDB )
     {
         // the db has already been opened
         // ignore this call
@@ -23,51 +23,41 @@ void ISettingsStorage::open( ISettingsService* settings )
     }
     mySettings = settings;
 
-    int ret = sqlite3_open( mydbfname.c_str(),&db);
+    int ret = sqlite3_open( mydbfname.c_str(), &myDB );
     if( ret )
         throw std::runtime_error("Database open failed");
-    if( ! db )
+    if( ! myDB )
         throw std::runtime_error("Database open failed");
 }
 
 void ISettingsStorage::close( void )
 {
-    if( db )
-        sqlite3_close(db);
-    db = 0;
-}
-
-void ISettingsStorage::loadAll( void )
-{
-
-}
-void ISettingsStorage::saveAll( void )
-{
-    // NYI by specification
-
+    if( myDB )
+        sqlite3_close(myDB);
+    myDB = 0;
 }
 
 void ISettingsStorage::updateBool( const char* groupName, const char* paramName, bool val )
 {
-    Write( groupName, paramName, eType::vbool, val, 0, 0, "''" );
+    Write( groupName, paramName, eType::tBool,  val, 0, 0, "''" );
 }
 void ISettingsStorage::updateInt( const char* groupName, const char* paramName, int val )
 {
-    Write( groupName, paramName, eType::vint, 0, val, 0, "''" );
+    Write( groupName, paramName, eType::tInt, 0, val, 0, "''" );
 }
 void ISettingsStorage::updateFloat( const char* groupName, const char* paramName, float val )
 {
-    Write( groupName, paramName, eType::vfloat, 0, 0, val, "''" );
+    Write( groupName, paramName, eType::tFloat, 0, 0, val, "''" );
 }
 void ISettingsStorage::updateString( const char* groupName, const char* paramName, const char* val )
 {
-    Write( groupName, paramName, eType::vstr, 0, 0, 0, val );
+    Write( groupName, paramName, eType::tString, 0, 0, 0, val );
 }
 
 void ISettingsStorage::IsGroup( const char* groupName )
 {
-    if( ! db )
-        return;
+    if( ! myDB )
+        throw std::runtime_error( "Database not open" );
 
     std::string query;
     query  = "CREATE TABLE IF NOT EXISTS ";
@@ -77,9 +67,9 @@ void ISettingsStorage::IsGroup( const char* groupName )
 
     //std::cout << query << std::endl;
 
-    if( sqlite3_exec( db, query.c_str(), 0, 0, 0) != SQLITE_OK )
+    if( sqlite3_exec( myDB, query.c_str(), 0, 0, 0) != SQLITE_OK )
     {
-        std::cout << "ERROR ISettingsStorage::IsGroup" << std::endl;
+        throw std::runtime_error( "ISettingsStorage::IsGroup" );
     }
 
 }
@@ -102,9 +92,9 @@ void ISettingsStorage::Write( const char* groupName, const char* paramName, eTyp
 
     //std::cout << query.str() << std::endl;
 
-    if( sqlite3_exec( db, query.str().c_str(), 0, 0, 0) != SQLITE_OK )
+    if( sqlite3_exec( myDB, query.str().c_str(), 0, 0, 0) != SQLITE_OK )
     {
-        std::cout << "ERROR ISettingsStorage::Write" << std::endl;
+        throw std::runtime_error( "ISettingsStorage::Write"  );
     }
 }
 
