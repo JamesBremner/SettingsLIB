@@ -55,6 +55,9 @@ public:
     virtual void updateFloat( const char* groupName, const char* paramName, float val );
     virtual void updateString( const char* groupName, const char* paramName, const char* val );
 
+    int readInt( const char* groupName, const char* paramName );
+    std::string readString( const char* groupName, const char* paramName );
+
 private:
     std::string mydbfname;       ///< Name of database file
     sqlite3 * myDB;             ///< Pointer to database engine
@@ -97,6 +100,8 @@ private:
     */
 
     void IsGroup( const char* groupName );
+
+    void IsType( const char* groupName, const char* paramName, eType type );
 };
 
 #endif /* ndef __ISETTINGSSTORAGE_H__ */
