@@ -92,7 +92,7 @@ void ISettingsStorage::Write( const char* groupName, const char* paramName, eTyp
     query << float_val << ", '";
     query << string_val << "' );";
 
-    std::cout << query.str() << std::endl;
+    //std::cout << query.str() << std::endl;
 
     if( sqlite3_exec( myDB, query.str().c_str(), 0, 0, 0) != SQLITE_OK )
     {
@@ -104,13 +104,18 @@ void ISettingsStorage::Write( const char* groupName, const char* paramName, eTyp
 
 static int callback (void* p,int n,char** r,char** names )
 {
-    strcpy( (char*)p, *r++ );
+    strcpy( (char*)p, *r );
     return 0;
 }
 static int callbackstring (void* p,int n,char** r,char** names )
 {
-    std::cout << *r << std::endl;
-    //strcpy( (char*)p, *r++ );
+    // allocate storage for string read from db
+    void * q = malloc( strlen( *r ) );
+    // copy string returned from db
+    strcpy( (char*)q, *r );
+    // copy pointer to string
+    *(char**)p = (char*)q;
+
     return 0;
 }
 
@@ -130,6 +135,23 @@ void ISettingsStorage::IsType( const char* groupName, const char* paramName, eTy
         throw std::runtime_error("ISettingsStorage::ReadType wrong type stored");
 }
 
+bool ISettingsStorage::readBool( const char* groupName, const char* paramName )
+{
+    IsType( groupName, paramName, eType::tBool );
+
+    std::stringstream query;
+    char results[200];
+    query  << "SELECT bool_val FROM " << groupName << " WHERE param " << " = '" << paramName << "';";
+    if( sqlite3_exec( myDB, query.str().c_str(), &callback, &results, 0) != SQLITE_OK )
+    {
+        std::string msg = "ISettingsStorage::ReadType ";
+        msg += sqlite3_errmsg(myDB);
+        throw std::runtime_error( msg );
+    }
+
+    return ( atoi(results) == 1 );
+}
+
 int ISettingsStorage::readInt( const char* groupName, const char* paramName )
 {
     IsType( groupName, paramName, eType::tInt );
@@ -146,13 +168,29 @@ int ISettingsStorage::readInt( const char* groupName, const char* paramName )
     return atoi( results );
 
 }
-
-std::string ISettingsStorage::readString( const char* groupName, const char* paramName )
+float ISettingsStorage::readFloat( const char* groupName, const char* paramName )
 {
-    IsType( groupName, paramName, eType::tInt );
+    IsType( groupName, paramName, eType::tFloat );
 
     std::stringstream query;
     char results[200];
+    query  << "SELECT float_val FROM " << groupName << " WHERE param " << " = '" << paramName << "';";
+    if( sqlite3_exec( myDB, query.str().c_str(), &callback, &results, 0) != SQLITE_OK )
+    {
+        std::string msg = "ISettingsStorage::ReadType ";
+        msg += sqlite3_errmsg(myDB);
+        throw std::runtime_error( msg );
+    }
+    return atof( results );
+
+}
+
+std::string ISettingsStorage::readString( const char* groupName, const char* paramName )
+{
+    IsType( groupName, paramName, eType::tString );
+
+    std::stringstream query;
+    char * results;
     query  << "SELECT string_val FROM " << groupName << " WHERE param " << " = '" << paramName << "';";
     if( sqlite3_exec( myDB, query.str().c_str(), &callbackstring, &results, 0) != SQLITE_OK )
     {
@@ -160,5 +198,8 @@ std::string ISettingsStorage::readString( const char* groupName, const char* par
         msg += sqlite3_errmsg(myDB);
         throw std::runtime_error( msg );
     }
+    std::string ret( results );
+    free( results );
+    return ret;
 }
 
