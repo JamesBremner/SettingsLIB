@@ -69,8 +69,32 @@ private:
         tString
     };
 
+    /** Write row to database table
+
+        @param[in] groupName table name
+        @param[in] paramName row name
+        @param[in] type type of the value to be written
+        @param[in] bool_val value, if bool type
+        @param[in] int_val value, if integer type
+        @param[in] int_float value, if float type
+        @param[in] string_val value, if string type
+
+        If a row with the paramName exists, then it is updated
+
+        Exception thrown on error
+    */
     void Write( const char* groupName, const char* paramName, eType type,
                               bool bool_val, int int_val, float float_val, const char* string_val  );
+
+    /** Endure table exists in database
+
+        @param[in] groupName table name
+
+        If the table does not exist, and the name is legal ( not a reserver SQL keyword )
+        then the table will be created.
+
+        Exception thrown on error
+    */
 
     void IsGroup( const char* groupName );
 };
