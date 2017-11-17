@@ -281,23 +281,23 @@ void ISettingsStorage::loadAll( void )
             switch( type )
             {
             case eType::tBool:
-                vBool = readBool( group.c_str(), param.c_str());
-                mySettings->setBool( group.c_str(), pt.param.c_str(), vBool );
+                vBool =    readBool( group.c_str(), param.c_str());
+                mySettings->setBool( group.c_str(), param.c_str(), vBool );
                 std::cout << vBool;
                 break;
             case eType::tInt:
-                vInt = readInt( group.c_str(), param.c_str());
-                mySettings->setInt( group.c_str(), pt.param.c_str(), vInt );
+                vInt =     readInt( group.c_str(), param.c_str());
+                mySettings->setInt( group.c_str(), param.c_str(), vInt );
                 std::cout << vInt;
                 break;
             case eType::tFloat:
-                vFloat = readFloat( group.c_str(), param.c_str());
-                 mySettings->setFloat( group.c_str(), pt.param.c_str(), vFloat );
+                vFloat    = readFloat( group.c_str(), param.c_str());
+                 mySettings->setFloat( group.c_str(), param.c_str(), vFloat );
                 std::cout << vFloat;
                 break;
             case eType::tString:
-                vString = readString( group.c_str(), param.c_str());
-                mySettings->setString( group.c_str(), pt.param.c_str(), vString.c_str() );
+                vString  = readString( group.c_str(), param.c_str());
+                mySettings->setString( group.c_str(), param.c_str(), vString.c_str() );
                 std::cout << vString;
                 break;
             }
