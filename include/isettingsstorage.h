@@ -31,31 +31,32 @@ public:
     */
     ISettingsStorage( const std::string& dbfname );
 
-    virtual ~ISettingsStorage() = default;
+    ~ISettingsStorage() = default;
 
     //! Open connection to datasource. It may be file or database.
     //! Subclass constructor should accept required information like db name or file path.
     //! If data store does not exist, open mast create it.
     //! When open fails, it must throw subclass of std::runtime_error
     //! @todo define exception for ISettingsStorage::open
-    virtual void open( ISettingsService* settings );
+     void open( ISettingsService* settings );
 
     //! Close connection to already opened data source.
     //! If open failed, this method should not fail, just igonre the call
-    virtual void close( void );
+     void close( void );
 
     //! Read all settings already stored in datastore, and push them to ISettingsService
-    virtual void loadAll( void );
+     void loadAll( void );
 
     //! File based datastore should use this to recreate settings file
-    virtual void saveAll( void ) {}
+     void saveAll( void ) {}
 
     //! Any Database based data store may use this to update values in db. File data stores should ignore this.
     //! std::runtime_error is thrown on error
-    virtual void updateBool( const char* groupName, const char* paramName, bool val );
-    virtual void updateInt( const char* groupName, const char* paramName, int val );
-    virtual void updateFloat( const char* groupName, const char* paramName, float val );
-    virtual void updateString( const char* groupName, const char* paramName, const char* val );
+     void updateBool( const char* groupName, const char* paramName, bool val );
+     void updateInt( const char* groupName, const char* paramName, int val );
+     void updateFloat( const char* groupName, const char* paramName, float val );
+     void updateDouble( const char* groupName, const char* paramName, double val );
+     void updateString( const char* groupName, const char* paramName, const char* val );
 
     //! Read bool from database
     bool readBool( const char* groupName, const char* paramName );
@@ -65,6 +66,8 @@ public:
 
     //! Read float from database
     float readFloat( const char* groupName, const char* paramName );
+
+    double readDouble( const char* groupName, const char* paramName );
 
     /** Read string stored in db
         @param[in] groupName
@@ -107,7 +110,7 @@ private:
         Exception thrown on error
     */
     void Write( const char* groupName, const char* paramName, eType type,
-                              bool bool_val, int int_val, float float_val, const char* string_val  );
+                              bool bool_val, int int_val, double float_val, const char* string_val  );
 
     /** Ensure table exists in database
 

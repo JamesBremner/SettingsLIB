@@ -2,6 +2,7 @@
 //  Implementation of ISettingsStorage methods by James Bremner
 //
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <cstdlib>
 #include <cstring>
@@ -50,6 +51,13 @@ void ISettingsStorage::updateInt( const char* groupName, const char* paramName, 
 }
 void ISettingsStorage::updateFloat( const char* groupName, const char* paramName, float val )
 {
+    /* floats are stored in the database as doubles
+    so this is just a wrapper for the updateDouble
+    */
+    updateDouble( groupName, paramName, (double)val);
+}
+void ISettingsStorage::updateDouble( const char* groupName, const char* paramName, double val )
+{
     Write( groupName, paramName, eType::tFloat, 0, 0, val, "''" );
 }
 void ISettingsStorage::updateString( const char* groupName, const char* paramName, const char* val )
@@ -78,7 +86,7 @@ void ISettingsStorage::IsGroup( const char* groupName )
 }
 
 void ISettingsStorage::Write( const char* groupName, const char* paramName, eType type,
-                              bool bool_val, int int_val, float float_val, const char* string_val  )
+                              bool bool_val, int int_val, double float_val, const char* string_val  )
 {
     IsGroup( groupName );
 
@@ -90,7 +98,7 @@ void ISettingsStorage::Write( const char* groupName, const char* paramName, eTyp
     query << (int) type << ", ";
     query << bool_val << ", ";
     query << int_val << ", ";
-    query << float_val << ", '";
+    query << std::setprecision(10) << float_val << ", '";
     query << string_val << "' );";
 
     //std::cout << query.str() << std::endl;
@@ -169,7 +177,15 @@ int ISettingsStorage::readInt( const char* groupName, const char* paramName )
     return atoi( results );
 
 }
+
 float ISettingsStorage::readFloat( const char* groupName, const char* paramName )
+{
+        /* floats are stored in the database as doubles
+    so this is just a wrapper for the readDouble
+    */
+    return (float) readDouble(groupName,paramName);
+}
+double ISettingsStorage::readDouble( const char* groupName, const char* paramName )
 {
     IsType( groupName, paramName, eType::tFloat );
 
@@ -261,7 +277,7 @@ void ISettingsStorage::loadAll( void )
 {
     bool vBool;
     int vInt;
-    float vFloat;
+    double vFloat;
     std::string vString;
 
     // loop over groups in database
@@ -282,22 +298,22 @@ void ISettingsStorage::loadAll( void )
             {
             case eType::tBool:
                 vBool =    readBool( group.c_str(), param.c_str());
-                mySettings->setBool( group.c_str(), param.c_str(), vBool );
+                //mySettings->setBool( group.c_str(), param.c_str(), vBool );
                 std::cout << vBool;
                 break;
             case eType::tInt:
                 vInt =     readInt( group.c_str(), param.c_str());
-                mySettings->setInt( group.c_str(), param.c_str(), vInt );
+                //mySettings->setInt( group.c_str(), param.c_str(), vInt );
                 std::cout << vInt;
                 break;
             case eType::tFloat:
-                vFloat    = readFloat( group.c_str(), param.c_str());
-                 mySettings->setFloat( group.c_str(), param.c_str(), vFloat );
-                std::cout << vFloat;
+                vFloat    = readDouble( group.c_str(), param.c_str());
+                //mySettings->setFloat( group.c_str(), param.c_str(), vFloat );
+                std::cout << std::setprecision(10) << vFloat;
                 break;
             case eType::tString:
                 vString  = readString( group.c_str(), param.c_str());
-                mySettings->setString( group.c_str(), param.c_str(), vString.c_str() );
+                //mySettings->setString( group.c_str(), param.c_str(), vString.c_str() );
                 std::cout << vString;
                 break;
             }
