@@ -141,22 +141,44 @@ void ISettingsStorage::read( ISettingsParam& param )
     query  << "SELECT val_type FROM " << param.myGroup
            << " WHERE param " << " = '" << param.myName << "';";
     if( sqlite3_exec(
+
+                // open db context
                 myDB,
+
+                // SQL query
                 query.str().c_str(),
+
+                // lambda function callback when row read
                 +[](void* p,int n,char** r,char** names )
 {
+    // set the type of the param from value in db
     *(ISettingsParam::eType*)p = (ISettingsParam::eType)atoi(*r);
+
+        // OK
         return 0;
     },
+
+    // pointer to parmeter type to be filled by db
     (void*)&param.type,
-    0) != SQLITE_OK )
+
+    // unused
+    0
+
+            ) != SQLITE_OK )
     {
         std::string msg = "ISettingsStorage::read ";
         msg += sqlite3_errmsg(myDB);
         throw std::runtime_error( msg );
     }
+
+    // check that the param type was successfully read
     if( param.type == ISettingsParam::eType::tNone )
-        throw std::runtime_error("cannot read parameter");
+    {
+        std::string msg = "ISettingsStorage::read cannot read ";
+        msg += param.myGroup + ", ";
+        msg += param.myName;
+        throw std::runtime_error(msg);
+    }
 
     // build query to read parameter value
     query.str("");
@@ -189,8 +211,11 @@ void ISettingsStorage::read( ISettingsParam& param )
     if( sqlite3_exec(
                 myDB,
                 query.str().c_str(),
+
+                // lambda function callback when row read
                 +[](void* p,int n,char** r,char** names )
 {
+    // set param value from value in db according to type
     switch( ((ISettingsParam*)p)->type )
         {
         case ISettingsParam::eType::tBool:
@@ -206,6 +231,8 @@ void ISettingsStorage::read( ISettingsParam& param )
             ((ISettingsParam*)p)->sVal = *r;
             break;
         }
+
+        // OK
         return 0;
     },
     (void*)&param,
@@ -279,7 +306,7 @@ ISettingsStorage::loadParams( const std::string& groupName )
                 query.str().c_str(),
                 +[](void* p,int n,char** r,char** names )
 {
-        ((std::vector< std::string >*)p)->push_back( *r );
+    ((std::vector< std::string >*)p)->push_back( *r );
         return 0;
     },
     (void*)&vParam,
@@ -295,11 +322,6 @@ ISettingsStorage::loadParams( const std::string& groupName )
 
 void ISettingsStorage::loadAll( void )
 {
-    bool vBool;
-    int vInt;
-    double vFloat;
-    std::string vString;
-
     // loop over groups in database
     for( auto& group : loadGroups() )
     {

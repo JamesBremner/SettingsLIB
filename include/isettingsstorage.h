@@ -143,6 +143,12 @@ public:
     */
     void Update( const ISettingsParam& param );
 
+    /** Read parameter from database
+        @param[in] param set group name and parmeter name for parmeter to read
+        @param[out] param the type and value will be set from the database
+
+        On error ( e.g. parameter does not exist ) throws std::runtime_error
+    */
     void read( ISettingsParam& param );
 
     //! Any Database based data store may use this to update values in db. File data stores should ignore this.
