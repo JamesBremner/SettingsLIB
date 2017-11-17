@@ -116,17 +116,6 @@ static int callback (void* p,int n,char** r,char** names )
     strcpy( (char*)p, *r );
     return 0;
 }
-static int callbackstring (void* p,int n,char** r,char** names )
-{
-    // allocate storage for string read from db
-    void * q = malloc( strlen( *r ) );
-    // copy string returned from db
-    strcpy( (char*)q, *r );
-    // copy pointer to string
-    *(char**)p = (char*)q;
-
-    return 0;
-}
 
 void ISettingsStorage::IsType( const char* groupName, const char* paramName, eType type )
 {
@@ -207,17 +196,25 @@ std::string ISettingsStorage::readString( const char* groupName, const char* par
     IsType( groupName, paramName, eType::tString );
 
     std::stringstream query;
-    char * results;
+    std::string results;
     query  << "SELECT string_val FROM " << groupName << " WHERE param " << " = '" << paramName << "';";
-    if( sqlite3_exec( myDB, query.str().c_str(), &callbackstring, &results, 0) != SQLITE_OK )
+    if( sqlite3_exec(
+                     myDB,
+                      query.str().c_str(),
+                      +[](void* p,int n,char** r,char** names )
+                     {
+                         *(std::string*)p = *r;
+                         return 0;
+                     },
+                       (void*)&results,
+                        0) != SQLITE_OK )
     {
         std::string msg = "ISettingsStorage::ReadType ";
         msg += sqlite3_errmsg(myDB);
         throw std::runtime_error( msg );
     }
-    std::string ret( results );
-    free( results );
-    return ret;
+
+    return results;
 }
 
 std::vector< std::string > ISettingsStorage::loadGroups()
