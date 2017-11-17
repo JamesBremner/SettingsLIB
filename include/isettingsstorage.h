@@ -153,28 +153,6 @@ public:
     void updateDouble( const char* groupName, const char* paramName, double val );
     void updateString( const char* groupName, const char* paramName, const char* val );
 
-    //! Read bool from database
-    bool readBool( const char* groupName, const char* paramName );
-
-    //! Read integer from database
-    int readInt( const char* groupName, const char* paramName );
-
-    //! Read float from database
-    float readFloat( const char* groupName, const char* paramName );
-
-    double readDouble( const char* groupName, const char* paramName );
-
-    /** Read string stored in db
-        @param[in] groupName
-        @param[in] paramName
-        @return string read from database
-
-        std::runtime_error is thrown on error
-
-        A string is returned so that we do not have to worry about allocating/freeing memory
-    */
-    std::string readString( const char* groupName, const char* paramName );
-
 private:
 
     std::string mydbfname;       ///< Name of database file
