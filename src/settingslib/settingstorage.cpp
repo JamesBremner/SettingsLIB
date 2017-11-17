@@ -341,16 +341,16 @@ void ISettingsStorage::loadAll( void )
             switch( result.type )
             {
             case ISettingsParam::eType::tBool:
-                //mySettings->setBool( group.c_str(), param.c_str(), vBool );
+                mySettings->setBool( group.c_str(), param.c_str(), result.bVal );
                 break;
             case ISettingsParam::eType::tInt:
-                //mySettings->setInt( group.c_str(), param.c_str(), vInt );
+                mySettings->setInt( group.c_str(), param.c_str(), result.iVal );
                 break;
             case ISettingsParam::eType::tFloat:
-                //mySettings->setFloat( group.c_str(), param.c_str(), vFloat );
+                mySettings->setFloat( group.c_str(), param.c_str(), result.fVal );
                 break;
             case ISettingsParam::eType::tString:
-                //mySettings->setString( group.c_str(), param.c_str(), vString.c_str() );
+                mySettings->setString( group.c_str(), param.c_str(), result.sVal.c_str() );
                 break;
             }
         }
