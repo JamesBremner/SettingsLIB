@@ -14,6 +14,8 @@
 #ifndef __ISETTINGSSTORAGE_H__
 #define __ISETTINGSSTORAGE_H__
 
+#include <vector>
+
 class ISettingsService;
 class sqlite3;
 
@@ -43,7 +45,7 @@ public:
     virtual void close( void );
 
     //! Read all settings already stored in datastore, and push them to ISettingsService
-    virtual void loadAll( void ) {}
+    virtual void loadAll( void );
 
     //! File based datastore should use this to recreate settings file
     virtual void saveAll( void ) {}
@@ -76,6 +78,7 @@ public:
     std::string readString( const char* groupName, const char* paramName );
 
 private:
+
     std::string mydbfname;       ///< Name of database file
     sqlite3 * myDB;             ///< Pointer to database engine
     ISettingsService* mySettings;
@@ -106,7 +109,7 @@ private:
     void Write( const char* groupName, const char* paramName, eType type,
                               bool bool_val, int int_val, float float_val, const char* string_val  );
 
-    /** Endure table exists in database
+    /** Ensure table exists in database
 
         @param[in] groupName table name
 
@@ -118,7 +121,25 @@ private:
 
     void IsGroup( const char* groupName );
 
+    /** Check that value stored in database row is of expected type
+        @param[in] groupName
+        @param[in] paramName
+        @param[in] type expected
+
+        If the type is not as expected, an exception is thrown
+    */
     void IsType( const char* groupName, const char* paramName, eType type );
+
+    /** Groups in the database
+        @return vector of all groups in dartabase
+    */
+    std::vector< std::string > loadGroups();
+
+    /** Params in group
+        @param[in] groupName
+        @return vector of pairs, each pair contains name and storage type of param
+    */
+    std::vector< std::pair< std::string, eType > > loadParams( const std::string& groupName );
 };
 
 #endif /* ndef __ISETTINGSSTORAGE_H__ */

@@ -5,6 +5,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <cstring>
+
 #include "isettingsservice.h"
 #include "isettingsstorage.h"
 #include "sqlite3.h"
@@ -201,5 +202,108 @@ std::string ISettingsStorage::readString( const char* groupName, const char* par
     std::string ret( results );
     free( results );
     return ret;
+}
+
+std::vector< std::string > ISettingsStorage::loadGroups()
+{
+    std::vector< std::string > vGroupName;
+    if( sqlite3_exec(
+                myDB,
+                "select name from sqlite_master where type='table';",
+                +[](void* p,int n,char** r,char** names )
+{
+    ((std::vector< std::string >*)p)->push_back( *r );
+        return 0;
+    }
+    ,
+    (void*)&vGroupName
+    , 0
+            ) != SQLITE_OK )
+    {
+        std::string msg = "ISettingsStorage::loadAll ";
+        msg += sqlite3_errmsg(myDB);
+        throw std::runtime_error( msg );
+    }
+
+    return vGroupName;
+}
+
+std::vector< std::pair< std::string, ISettingsStorage::eType > >
+ISettingsStorage::loadParams( const std::string& groupName )
+{
+    std::vector< std::pair< std::string, eType > > vParam;
+    std::stringstream query;
+    query << "SELECT param, val_type FROM "
+          << groupName
+          << ";";
+    if( sqlite3_exec(
+                myDB,
+                query.str().c_str(),
+                +[](void* p,int n,char** r,char** names )
+{
+
+    std::pair< std::string, eType > pt( *r, (eType)atoi( *(r+1) ) );
+        ((std::vector< std::pair< std::string, eType > >*)p)->push_back( pt );
+        return 0;
+    },
+    (void*)&vParam,
+    0
+            ) != SQLITE_OK )
+    {
+        std::string msg = "ISettingsStorage::loadAll ";
+        msg += sqlite3_errmsg(myDB);
+        throw std::runtime_error( msg );
+    }
+    return vParam;
+}
+
+void ISettingsStorage::loadAll( void )
+{
+    bool vBool;
+    int vInt;
+    float vFloat;
+    std::string vString;
+
+    // loop over groups in database
+    for( auto& group : loadGroups() )
+    {
+        // loop over params in group
+        for( auto& param_type : loadParams( group ) )
+        {
+            // display group and param
+            std::string param = param_type.first;
+            eType type        = param_type.second;
+            std::cout << group <<" "
+                      << param <<" = ";
+
+            // extract value of stored type
+            // display and pass to settings service
+            switch( type )
+            {
+            case eType::tBool:
+                vBool = readBool( group.c_str(), param.c_str());
+                mySettings->setBool( group.c_str(), pt.param.c_str(), vBool );
+                std::cout << vBool;
+                break;
+            case eType::tInt:
+                vInt = readInt( group.c_str(), param.c_str());
+                mySettings->setInt( group.c_str(), pt.param.c_str(), vInt );
+                std::cout << vInt;
+                break;
+            case eType::tFloat:
+                vFloat = readFloat( group.c_str(), param.c_str());
+                 mySettings->setFloat( group.c_str(), pt.param.c_str(), vFloat );
+                std::cout << vFloat;
+                break;
+            case eType::tString:
+                vString = readString( group.c_str(), param.c_str());
+                mySettings->setString( group.c_str(), pt.param.c_str(), vString.c_str() );
+                std::cout << vString;
+                break;
+            }
+            std::cout << std::endl;
+        }
+    }
+    std::cout << std::endl;
 }
 
