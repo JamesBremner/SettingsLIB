@@ -43,26 +43,23 @@ void ISettingsStorage::close( void )
 
 void ISettingsStorage::updateBool( const char* groupName, const char* paramName, bool val )
 {
-    Write( groupName, paramName, eType::tBool,  val, 0, 0, "''" );
+    Update( ISettingsParam( groupName, paramName, val )  );
 }
 void ISettingsStorage::updateInt( const char* groupName, const char* paramName, int val )
 {
-    Write( groupName, paramName, eType::tInt, 0, val, 0, "''" );
+    Update( ISettingsParam( groupName, paramName, val )  );
 }
 void ISettingsStorage::updateFloat( const char* groupName, const char* paramName, float val )
 {
-    /* floats are stored in the database as doubles
-    so this is just a wrapper for the updateDouble
-    */
-    updateDouble( groupName, paramName, (double)val);
+    Update( ISettingsParam( groupName, paramName, val )  );
 }
 void ISettingsStorage::updateDouble( const char* groupName, const char* paramName, double val )
 {
-    Write( groupName, paramName, eType::tFloat, 0, 0, val, "''" );
+    Update( ISettingsParam( groupName, paramName, val )  );
 }
 void ISettingsStorage::updateString( const char* groupName, const char* paramName, const char* val )
 {
-    Write( groupName, paramName, eType::tString, 0, 0, 0, val );
+    Update( ISettingsParam( groupName, paramName, val )  );
 }
 
 void ISettingsStorage::IsGroup( const char* groupName )
@@ -80,35 +77,146 @@ void ISettingsStorage::IsGroup( const char* groupName )
 
     if( sqlite3_exec( myDB, query.c_str(), 0, 0, 0) != SQLITE_OK )
     {
-        throw std::runtime_error( "ISettingsStorage::IsGroup" );
+        std::string msg = "ISettingsStorage::IsGroup ";
+        msg += sqlite3_errmsg(myDB);
+        throw std::runtime_error( msg  );
     }
 
 }
 
-void ISettingsStorage::Write( const char* groupName, const char* paramName, eType type,
-                              bool bool_val, int int_val, double float_val, const char* string_val  )
+void ISettingsStorage::Update( const ISettingsParam& param )
 {
-    IsGroup( groupName );
+    // Ensure group table exists
+
+    IsGroup( param.myGroup.c_str() );
+
+    // build SQL query, according to type
 
     std::stringstream query;
     query  << "INSERT INTO ";
-    query << std::string ( groupName );
+    query << param.myGroup;
     query << " VALUES ( ";
-    query << "'" << paramName << "', ";
-    query << (int) type << ", ";
-    query << bool_val << ", ";
-    query << int_val << ", ";
-    query << std::setprecision(10) << float_val << ", '";
-    query << string_val << "' );";
+    query << "'" << param.myName << "', ";
+    query << (int) param.type << ", ";
+
+    switch( param.type )
+    {
+    case ISettingsParam::eType::tBool:
+        query <<  (int) param.bVal << ", ";
+        query << ", 0, 0,'""' );";
+        break;
+    case ISettingsParam::eType::tInt:
+        query <<  "0, ";
+        query << param.iVal << ", ";
+        query <<  "0, '""' );";
+        break;
+    case ISettingsParam::eType::tFloat:
+        query <<  "0, 0, ";
+        query << param.fVal << ", ";
+        query <<  "'""' );";
+        break;
+    case ISettingsParam::eType::tString:
+        query <<  "0, 0, 0, '";
+        query << param.sVal;
+        query << "' );";
+    }
 
     //std::cout << query.str() << std::endl;
 
+    // execute SQL query to update database
+
     if( sqlite3_exec( myDB, query.str().c_str(), 0, 0, 0) != SQLITE_OK )
     {
-        std::string msg = "ISettingsStorage::Write ";
+        std::string msg = "ISettingsStorage::Update ";
         msg += sqlite3_errmsg(myDB);
         throw std::runtime_error( msg  );
     }
+}
+
+void ISettingsStorage::read( ISettingsParam& param )
+{
+    // read parameter type
+    param.type = ISettingsParam::eType::tNone;
+    std::stringstream query;
+    query  << "SELECT val_type FROM " << param.myGroup
+           << " WHERE param " << " = '" << param.myName << "';";
+    if( sqlite3_exec(
+                myDB,
+                query.str().c_str(),
+                +[](void* p,int n,char** r,char** names )
+{
+    *(ISettingsParam::eType*)p = (ISettingsParam::eType)atoi(*r);
+        return 0;
+    },
+    (void*)&param.type,
+    0) != SQLITE_OK )
+    {
+        std::string msg = "ISettingsStorage::read ";
+        msg += sqlite3_errmsg(myDB);
+        throw std::runtime_error( msg );
+    }
+    if( param.type == ISettingsParam::eType::tNone )
+        throw std::runtime_error("cannot read parameter");
+
+    // build query to read parameter value
+    query.str("");
+    query << "SELECT ";
+    switch( param.type )
+    {
+    case ISettingsParam::eType::tBool:
+        query << "bool_val ";
+        break;
+    case ISettingsParam::eType::tInt:
+        query << "int_val ";
+        break;
+    case ISettingsParam::eType::tFloat:
+        query << "float_val ";
+        break;
+    case ISettingsParam::eType::tString:
+        query << "string_val ";
+        break;
+    default:
+        throw std::runtime_error("ISettingsStorage::read unrecognized type");
+    }
+    query << "FROM " << param.myGroup
+          << " WHERE param = '" << param.myName
+          << "';";
+
+    // std::cout <<"\n" << query.str() << std::endl;
+
+    // execute query in database engine
+
+    if( sqlite3_exec(
+                myDB,
+                query.str().c_str(),
+                +[](void* p,int n,char** r,char** names )
+{
+    switch( ((ISettingsParam*)p)->type )
+        {
+        case ISettingsParam::eType::tBool:
+            ((ISettingsParam*)p)->bVal = atoi( *r );
+            break;
+        case ISettingsParam::eType::tInt:
+            ((ISettingsParam*)p)->iVal = atoi( *r );
+            break;
+        case ISettingsParam::eType::tFloat:
+            ((ISettingsParam*)p)->fVal = atof( *r );
+            break;
+        case ISettingsParam::eType::tString:
+            ((ISettingsParam*)p)->sVal = *r;
+            break;
+        }
+        return 0;
+    },
+    (void*)&param,
+    0) != SQLITE_OK )
+    {
+        std::string msg = "ISettingsStorage::read ";
+        msg += sqlite3_errmsg(myDB);
+        throw std::runtime_error( msg );
+    }
+
+
 }
 
 static int callback (void* p,int n,char** r,char** names )
@@ -117,7 +225,7 @@ static int callback (void* p,int n,char** r,char** names )
     return 0;
 }
 
-void ISettingsStorage::IsType( const char* groupName, const char* paramName, eType type )
+void ISettingsStorage::IsType( const char* groupName, const char* paramName, ISettingsParam::eType type )
 {
     std::stringstream query;
     query  << "SELECT val_type FROM " << groupName << " WHERE param " << " = '" << paramName << "';";
@@ -135,7 +243,7 @@ void ISettingsStorage::IsType( const char* groupName, const char* paramName, eTy
 
 bool ISettingsStorage::readBool( const char* groupName, const char* paramName )
 {
-    IsType( groupName, paramName, eType::tBool );
+    IsType( groupName, paramName, ISettingsParam::eType::tBool );
 
     std::stringstream query;
     char results[200];
@@ -152,7 +260,7 @@ bool ISettingsStorage::readBool( const char* groupName, const char* paramName )
 
 int ISettingsStorage::readInt( const char* groupName, const char* paramName )
 {
-    IsType( groupName, paramName, eType::tInt );
+    IsType( groupName, paramName, ISettingsParam::eType::tInt );
 
     std::stringstream query;
     char results[200];
@@ -169,14 +277,14 @@ int ISettingsStorage::readInt( const char* groupName, const char* paramName )
 
 float ISettingsStorage::readFloat( const char* groupName, const char* paramName )
 {
-        /* floats are stored in the database as doubles
+    /* floats are stored in the database as doubles
     so this is just a wrapper for the readDouble
     */
     return (float) readDouble(groupName,paramName);
 }
 double ISettingsStorage::readDouble( const char* groupName, const char* paramName )
 {
-    IsType( groupName, paramName, eType::tFloat );
+    IsType( groupName, paramName, ISettingsParam::eType::tFloat );
 
     std::stringstream query;
     char results[200];
@@ -193,21 +301,21 @@ double ISettingsStorage::readDouble( const char* groupName, const char* paramNam
 
 std::string ISettingsStorage::readString( const char* groupName, const char* paramName )
 {
-    IsType( groupName, paramName, eType::tString );
+    IsType( groupName, paramName, ISettingsParam::eType::tString );
 
     std::stringstream query;
     std::string results;
     query  << "SELECT string_val FROM " << groupName << " WHERE param " << " = '" << paramName << "';";
     if( sqlite3_exec(
-                     myDB,
-                      query.str().c_str(),
-                      +[](void* p,int n,char** r,char** names )
-                     {
-                         *(std::string*)p = *r;
-                         return 0;
-                     },
-                       (void*)&results,
-                        0) != SQLITE_OK )
+                myDB,
+                query.str().c_str(),
+                +[](void* p,int n,char** r,char** names )
+{
+    *(std::string*)p = *r;
+        return 0;
+    },
+    (void*)&results,
+    0) != SQLITE_OK )
     {
         std::string msg = "ISettingsStorage::ReadType ";
         msg += sqlite3_errmsg(myDB);
@@ -241,12 +349,12 @@ std::vector< std::string > ISettingsStorage::loadGroups()
     return vGroupName;
 }
 
-std::vector< std::pair< std::string, ISettingsStorage::eType > >
+std::vector< std::string >
 ISettingsStorage::loadParams( const std::string& groupName )
 {
-    std::vector< std::pair< std::string, eType > > vParam;
+    std::vector< std::string > vParam;
     std::stringstream query;
-    query << "SELECT param, val_type FROM "
+    query << "SELECT param FROM "
           << groupName
           << ";";
     if( sqlite3_exec(
@@ -254,9 +362,7 @@ ISettingsStorage::loadParams( const std::string& groupName )
                 query.str().c_str(),
                 +[](void* p,int n,char** r,char** names )
 {
-
-    std::pair< std::string, eType > pt( *r, (eType)atoi( *(r+1) ) );
-        ((std::vector< std::pair< std::string, eType > >*)p)->push_back( pt );
+        ((std::vector< std::string >*)p)->push_back( *r );
         return 0;
     },
     (void*)&vParam,
@@ -281,42 +387,56 @@ void ISettingsStorage::loadAll( void )
     for( auto& group : loadGroups() )
     {
         // loop over params in group
-        for( auto& param_type : loadParams( group ) )
+        for( auto& param : loadParams( group ) )
         {
-            // display group and param
-            std::string param = param_type.first;
-            eType type        = param_type.second;
-            std::cout << group <<" "
-                      << param <<" = ";
+            // read parameter from db
 
-            // extract value of stored type
-            // display and pass to settings service
-            switch( type )
+            ISettingsParam result( group, param );
+            read( result );
+
+            // display
+
+            std::cout << result.Text();
+
+            // pass to settings service
+            switch( result.type )
             {
-            case eType::tBool:
-                vBool =    readBool( group.c_str(), param.c_str());
+            case ISettingsParam::eType::tBool:
                 //mySettings->setBool( group.c_str(), param.c_str(), vBool );
-                std::cout << vBool;
                 break;
-            case eType::tInt:
-                vInt =     readInt( group.c_str(), param.c_str());
+            case ISettingsParam::eType::tInt:
                 //mySettings->setInt( group.c_str(), param.c_str(), vInt );
-                std::cout << vInt;
                 break;
-            case eType::tFloat:
-                vFloat    = readDouble( group.c_str(), param.c_str());
+            case ISettingsParam::eType::tFloat:
                 //mySettings->setFloat( group.c_str(), param.c_str(), vFloat );
-                std::cout << std::setprecision(10) << vFloat;
                 break;
-            case eType::tString:
-                vString  = readString( group.c_str(), param.c_str());
+            case ISettingsParam::eType::tString:
                 //mySettings->setString( group.c_str(), param.c_str(), vString.c_str() );
-                std::cout << vString;
                 break;
             }
-            std::cout << std::endl;
         }
     }
-    std::cout << std::endl;
 }
 
+std::string ISettingsParam::Text()
+{
+    std::stringstream ss;
+    ss << myGroup << ", " << myName << " = ";
+    switch( type )
+    {
+    case eType::tBool:
+        ss << bVal;
+        break;
+    case eType::tInt:
+        ss << iVal;
+        break;
+    case eType::tFloat:
+        ss << fVal;
+        break;
+    case eType::tString:
+        ss << sVal;
+        break;
+    }
+    ss << "\n";
+    return ss.str();
+}
