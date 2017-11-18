@@ -135,12 +135,17 @@ void ISettingsStorage::Update( const ISettingsParam& param )
 
 void ISettingsStorage::read( ISettingsParam& param )
 {
-    // read parameter type
+    // so far, nothing has been read
     param.type = ISettingsParam::eType::tNone;
+
+    // build query to read param
     std::stringstream query;
-    query  << "SELECT val_type FROM " << param.myGroup
+    query  << "SELECT val_type, bool_val, int_val, float_val, string_val"
+           << " FROM " << param.myGroup
            << " WHERE param " << " = '" << param.myName << "';";
-    if( sqlite3_exec(
+
+    // execute query in database engine
+    int db_ret = sqlite3_exec(
 
                 // open db context
                 myDB,
@@ -151,98 +156,53 @@ void ISettingsStorage::read( ISettingsParam& param )
                 // lambda function callback when row read
                 +[](void* p,int n,char** r,char** names )
 {
+    // reference the parameter we are reading into
+    ISettingsParam& param = *((ISettingsParam*)p);
+
     // set the type of the param from value in db
-    *(ISettingsParam::eType*)p = (ISettingsParam::eType)atoi(*r);
+    param.type = (ISettingsParam::eType)atoi(*r);
 
-        // OK
-        return 0;
-    },
-
-    // pointer to parmeter type to be filled by db
-    (void*)&param.type,
-
-    // unused
-    0
-
-            ) != SQLITE_OK )
-    {
-        std::string msg = "ISettingsStorage::read ";
-        msg += sqlite3_errmsg(myDB);
-        throw std::runtime_error( msg );
-    }
-
-    // check that the param type was successfully read
-    if( param.type == ISettingsParam::eType::tNone )
-    {
-        std::string msg = "ISettingsStorage::read cannot read ";
-        msg += param.myGroup + ", ";
-        msg += param.myName;
-        throw std::runtime_error(msg);
-    }
-
-    // build query to read parameter value
-    query.str("");
-    query << "SELECT ";
+    // copy value from db into param according to type
     switch( param.type )
     {
     case ISettingsParam::eType::tBool:
-        query << "bool_val ";
+        param.bVal = atoi( *(r+1 ));
         break;
     case ISettingsParam::eType::tInt:
-        query << "int_val ";
+        param.iVal = atoi( *(r+2) );
         break;
     case ISettingsParam::eType::tFloat:
-        query << "float_val ";
+        param.fVal = atof( *(r+3) );
         break;
     case ISettingsParam::eType::tString:
-        query << "string_val ";
+        param.sVal = *(r+4);
         break;
-    default:
-        throw std::runtime_error("ISettingsStorage::read unrecognized type");
     }
-    query << "FROM " << param.myGroup
-          << " WHERE param = '" << param.myName
-          << "';";
-
-    // std::cout <<"\n" << query.str() << std::endl;
-
-    // execute query in database engine
-
-    if( sqlite3_exec(
-                myDB,
-                query.str().c_str(),
-
-                // lambda function callback when row read
-                +[](void* p,int n,char** r,char** names )
-{
-    // set param value from value in db according to type
-    switch( ((ISettingsParam*)p)->type )
-        {
-        case ISettingsParam::eType::tBool:
-            ((ISettingsParam*)p)->bVal = atoi( *r );
-            break;
-        case ISettingsParam::eType::tInt:
-            ((ISettingsParam*)p)->iVal = atoi( *r );
-            break;
-        case ISettingsParam::eType::tFloat:
-            ((ISettingsParam*)p)->fVal = atof( *r );
-            break;
-        case ISettingsParam::eType::tString:
-            ((ISettingsParam*)p)->sVal = *r;
-            break;
-        }
 
         // OK
         return 0;
+
+        // end of lambda function callback when row read
     },
+
+    // pointer to param to be read into from db
     (void*)&param,
-    0) != SQLITE_OK )
+
+    // unused
+    0 );
+
+    // check for error or failure to read
+    // maybe the parameter does not exist?
+
+    if( db_ret != SQLITE_OK ||
+        param.type == ISettingsParam::eType::tNone )
     {
         std::string msg = "ISettingsStorage::read ";
+        msg += param.myGroup + ", ";
+        msg += param.myName + ": ";
         msg += sqlite3_errmsg(myDB);
         throw std::runtime_error( msg );
     }
-
 
 }
 
@@ -341,16 +301,16 @@ void ISettingsStorage::loadAll( void )
             switch( result.type )
             {
             case ISettingsParam::eType::tBool:
-                mySettings->setBool( group.c_str(), param.c_str(), result.bVal );
+                //mySettings->setBool( group.c_str(), param.c_str(), result.bVal );
                 break;
             case ISettingsParam::eType::tInt:
-                mySettings->setInt( group.c_str(), param.c_str(), result.iVal );
+                //mySettings->setInt( group.c_str(), param.c_str(), result.iVal );
                 break;
             case ISettingsParam::eType::tFloat:
-                mySettings->setFloat( group.c_str(), param.c_str(), result.fVal );
+                //mySettings->setFloat( group.c_str(), param.c_str(), result.fVal );
                 break;
             case ISettingsParam::eType::tString:
-                mySettings->setString( group.c_str(), param.c_str(), result.sVal.c_str() );
+                //mySettings->setString( group.c_str(), param.c_str(), result.sVal.c_str() );
                 break;
             }
         }
