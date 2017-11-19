@@ -141,7 +141,7 @@ public:
 
         On error, a std::runtime_error exception is thrown
     */
-    void Update( const ISettingsParam& param );
+    void update( const ISettingsParam& param );
 
     /** Read parameter from database
         @param[in] param set group name and parmeter name for parmeter to read
@@ -162,39 +162,8 @@ public:
 private:
 
     std::string mydbfname;       ///< Name of database file
-    sqlite3 * myDB;             ///< Pointer to database engine
     ISettingsService* mySettings;
 
-    //  enumerator defining the various types that can be stored
-//    enum class eType
-//    {
-//        tNone,
-//        tBool,
-//        tInt,
-//        tFloat,
-//        tString
-//    };
-
-    /** Ensure table exists in database
-
-        @param[in] groupName table name
-
-        If the table does not exist, and the name is legal ( not a reserver SQL keyword )
-        then the table will be created.
-
-        Exception thrown on error
-    */
-
-    void IsGroup( const char* groupName );
-
-    /** Check that value stored in database row is of expected type
-        @param[in] groupName
-        @param[in] paramName
-        @param[in] type expected
-
-        If the type is not as expected, an exception is thrown
-    */
-    void IsType( const char* groupName, const char* paramName, ISettingsParam::eType type );
 
     /** Groups in the database
         @return vector of all groups in dartabase
