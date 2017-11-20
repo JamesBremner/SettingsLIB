@@ -11,7 +11,17 @@
 #include "isettingsstorage.h"
 #include "sqlite3.h"
 
-/** Look after the details of executing an SQL query on the sqlite database engine */
+/** Look after the details of executing an SQL query on the sqlite database engine
+
+  Usage:
+
+  <pre>
+    cSQL sql;
+    sql.open("test.dat");
+    sql << "SELECT * FRON tablename;";
+    int first_result = atoi( sql[0].c_str() );
+  <pre>
+*/
 
 class cSQL
 {
@@ -35,7 +45,23 @@ public:
         @param[in] query the SQL query
     */
 
-    void Exec( const std::string& query );
+    void operator << ( const std::string& query );
+
+    /** Access a result returned from the database
+        @param[in] i zero-based index of result to return
+        @return reference to string result at index
+
+        The results are stores in co;lumn major order
+        Meaning that all the columns in a row are adjacent
+        So, if the rows contain 5 columns
+        then the 3rd column of the 5th row
+        will be at index 2*5 + 2
+        column and row indices are zero-base
+
+        Thows a std::runtime_error exception on error
+        e.g. index out of bounds
+    */
+    const std::string& operator [] ( int i );
 
     /** Reference the results of the query
         @return a vector of strings containing the results in column-major order
@@ -83,7 +109,7 @@ void  cSQL::Close()
     db = 0;
 }
 
-void  cSQL::Exec( const std::string& query )
+void cSQL::operator << ( const std::string& query )
 {
     //std::cout << myQuery.str() << std::endl;
 
@@ -127,6 +153,13 @@ void  cSQL::Exec( const std::string& query )
 
 }
 
+const std::string& cSQL::operator [] (int i )
+{
+    if( 0 > i || i >= (int) myResult.size() )
+        throw std::runtime_error( "cSQL out of range result requested" );
+    return myResult[ i ];
+}
+
 ISettingsStorage::ISettingsStorage( const std::string& dbfname )
     : mydbfname( dbfname )
 {
@@ -167,9 +200,11 @@ void ISettingsStorage::update( const ISettingsParam& param )
 {
     // Ensure group table exists
 
-    SQL.Exec( "CREATE TABLE IF NOT EXISTS "
-        + param.myGroup
-        + " (  param PRIMARY KEY ON CONFLICT REPLACE, val_type, bool_val, int_val, float_val, string_val );" );
+    std::string q = "CREATE TABLE IF NOT EXISTS "
+                    + param.myGroup
+                    + " (  param PRIMARY KEY ON CONFLICT REPLACE, val_type, bool_val, int_val, float_val, string_val );";
+
+    SQL << q;
 
     // build SQL query, according to type
 
@@ -204,45 +239,46 @@ void ISettingsStorage::update( const ISettingsParam& param )
 
     //std::cout << query.str() << std::endl;
 
-    SQL.Exec( query.str() );
+    SQL << query.str();
 }
 
 void ISettingsStorage::read( ISettingsParam& param )
 {
-    SQL.Exec(
-             " SELECT val_type, bool_val, int_val, float_val, string_val FROM " + param.myGroup
-           + " WHERE param = '" + param.myName + "';" );
+    std::string query =
+        " SELECT val_type, bool_val, int_val, float_val, string_val FROM " + param.myGroup
+        + " WHERE param = '" + param.myName + "';";
+    SQL << query;
 
-    param.type = (ISettingsParam::eType)atoi( SQL.Result()[0].c_str() );
+    param.type = (ISettingsParam::eType)atoi( SQL[0].c_str() );
 
     // copy value from db into param according to type
     switch( param.type )
     {
     case ISettingsParam::eType::tBool:
-        param.bVal = atoi( SQL.Result()[1].c_str() );
+        param.bVal = atoi( SQL[1].c_str() );
         break;
     case ISettingsParam::eType::tInt:
-        param.iVal = atoi( SQL.Result()[2].c_str() );
+        param.iVal = atoi( SQL[2].c_str() );
         break;
     case ISettingsParam::eType::tFloat:
-        param.fVal = atof( SQL.Result()[3].c_str() );
+        param.fVal = atof( SQL[3].c_str() );
         break;
     case ISettingsParam::eType::tString:
-        param.sVal = SQL.Result()[4];
+        param.sVal = SQL[4];
         break;
     }
 }
 
 std::vector< std::string > ISettingsStorage::loadGroups()
 {
-    SQL.Exec( "SELECT name FROM sqlite_master WHERE type='table';" );
+    SQL << "SELECT name FROM sqlite_master WHERE type='table';";
     return SQL.Result();
 }
 
 std::vector< std::string >
 ISettingsStorage::loadParams( const std::string& groupName )
 {
-    SQL.Exec( "SELECT param FROM " + groupName + ";" );
+    SQL << "SELECT param FROM " + groupName + ";";
     return SQL.Result();
 }
 
